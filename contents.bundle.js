@@ -87,6 +87,7 @@ var makeToC = (() => {
     default: () => makeToC
   });
   var import_slugify = __toESM(require_slugify());
+  var DEFAULT_LIST_TAG_NAME = "ul";
   function isHeadingElement(element) {
     const tagName = element.tagName.toLowerCase();
     return tagName.match(/^h[1-6]$/) !== null;
@@ -140,7 +141,7 @@ var makeToC = (() => {
       throw new Error("argument must be an Element node");
     }
     if (list === void 0) {
-      list = document.createElement("ol");
+      list = document.createElement(DEFAULT_LIST_TAG_NAME);
     }
     let currentList = list;
     let currentLevelStack = [];

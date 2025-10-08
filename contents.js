@@ -4,6 +4,7 @@
 // Browser compatibility: ES6
 // This includes support for all current browsers with any significant market share (at least 0.1%)
 import slugify from "slugify";
+const DEFAULT_LIST_TAG_NAME = "ul";
 function isHeadingElement(element) {
     const tagName = element.tagName.toLowerCase();
     return tagName.match(/^h[1-6]$/) !== null;
@@ -60,7 +61,7 @@ function buildList(content, list, excludeElements = [], linkPrefix = "", isSubli
         throw new Error("argument must be an Element node");
     }
     if (list === undefined) {
-        list = document.createElement("ol");
+        list = document.createElement(DEFAULT_LIST_TAG_NAME);
     }
     let currentList = list;
     let currentLevelStack = [];
