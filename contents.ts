@@ -10,14 +10,29 @@
 import slugify from "slugify";
 
 
-function isHeading(element: Element): element is HTMLHeadingElement {
+function isHeadingElement(element: Element): element is HTMLHeadingElement {
 	const tagName = element.tagName.toLowerCase();
 	return tagName.match(/^h[1-6]$/) !== null;
 }
 
 const sectioningTagNames = ["address", "article", "aside", "footer", "header", "main", "nav", "section", "search"];
-function isSectioning(element: Element): boolean {
+function isSectioningElement(element: Element): element is HTMLElement {
 	return sectioningTagNames.includes(element.tagName.toLowerCase());
+}
+
+const listTagNames = ["ol", "ul"];
+function isListElement(element: Element): element is HTMLOListElement | HTMLUListElement {
+	return listTagNames.includes(element.tagName.toLowerCase());
+}
+
+function getLastElementChildOfTagName(element: Element, tagName: string): Element | null {
+	tagName = tagName.toLowerCase();
+	for (const childElement of Array.from(element.children).reverse()) {
+		if (childElement.tagName.toLowerCase() === tagName) {
+			return childElement;
+		}
+	}
+	return null;
 }
 
 function addListItem(list: HTMLOListElement | HTMLUListElement, heading: HTMLHeadingElement, linkPrefix: string = ""): HTMLLIElement {
@@ -37,20 +52,34 @@ function addListItem(list: HTMLOListElement | HTMLUListElement, heading: HTMLHea
 }
 
 function addSublist(list: HTMLOListElement | HTMLUListElement): HTMLOListElement | HTMLUListElement {
-	let lastListItem = list.lastElementChild;
+	let lastListItem = getLastElementChildOfTagName(list, "li");
 	if (lastListItem === null) {
 		lastListItem = addListItem(list, document.createElement("h6"));  // empty heading at the lowest level at the start, so that it can be superseded by any real headings after it
 	}
 
 	const listTagName = list.tagName.toLowerCase();
-	const sublist = document.createElement(listTagName) as HTMLOListElement | HTMLUListElement;
-	lastListItem.appendChild(sublist);
 
-	return sublist;
+	const lastListItemLastChildElement = lastListItem.lastElementChild;
+	if (lastListItemLastChildElement !== null && isListElement(lastListItemLastChildElement)) {
+		// Do not add a new sublist if there is already one
+		return lastListItemLastChildElement;
+
+	} else {
+		const sublist = document.createElement(listTagName) as HTMLOListElement | HTMLUListElement;
+		lastListItem.appendChild(sublist);
+
+		return sublist;
+	}
 }
 
 
-function buildList(content: Element, list?: HTMLOListElement | HTMLUListElement, linkPrefix: string = ""): HTMLOListElement | HTMLUListElement {
+function buildList(
+	content: Element,
+	list?: HTMLOListElement | HTMLUListElement,
+	excludeElements: Element[] = [],
+	linkPrefix: string = "",
+	isSublist: boolean = false,
+): HTMLOListElement | HTMLUListElement {
 	if (content.nodeType !== Node.ELEMENT_NODE) {
 		throw new Error("argument must be an Element node");
 	}
@@ -64,11 +93,25 @@ function buildList(content: Element, list?: HTMLOListElement | HTMLUListElement,
 	for (const childElement of Array.from(content.children)) {
 		// Use a snapshot of content
 
-		if (isHeading(childElement)) {
+		let excluded = false;
+		for (const excludeElement of excludeElements) {
+			if (childElement.isSameNode(excludeElement)) {
+				excluded = true;
+				break;
+			}
+		}
+		if (excluded) {
+			continue;
+		}
+
+		if (isHeadingElement(childElement)) {
 			const headingTagName = childElement.tagName.toLowerCase();
 			const headingLevel = parseInt(headingTagName[1]);
 
 			if (currentLevelStack.length === 0) {
+				if (isSublist) {
+					currentList = addSublist(currentList);
+				}
 				currentLevelStack.push(headingLevel);
 
 			} else {
@@ -98,19 +141,30 @@ function buildList(content: Element, list?: HTMLOListElement | HTMLUListElement,
 
 			addListItem(currentList, childElement, linkPrefix);
 
-		} else if (isSectioning(childElement)) {
-			buildList(childElement, currentList);
+		} else if (isSectioningElement(childElement)) {
+			currentList = buildList(
+				childElement,
+				currentList,
+				excludeElements,
+				linkPrefix,
+				currentLevelStack.length > 0 || isSublist,
+			);
 		}
 	}
 
 	return list;
 }
 
-export default function makeToC(tocElement: Element, contentParent?: Element) {
+export default function makeToC(
+	tocElement: Element,
+	contentParent?: Element,
+	excludeElements: Element[] = [],
+	linkPrefix: string = "",
+): void {
 	if (contentParent === undefined) {
 		contentParent = document.body;
 	}
 
-	const list = buildList(contentParent, undefined, "");
+	const list = buildList(contentParent, undefined, excludeElements, linkPrefix);
 	tocElement.appendChild(list);
 }

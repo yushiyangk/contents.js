@@ -87,9 +87,26 @@ var makeToC = (() => {
     default: () => makeToC
   });
   var import_slugify = __toESM(require_slugify());
-  function isHeading(childElement) {
-    const tagName = childElement.tagName.toLowerCase();
+  function isHeadingElement(element) {
+    const tagName = element.tagName.toLowerCase();
     return tagName.match(/^h[1-6]$/) !== null;
+  }
+  var sectioningTagNames = ["address", "article", "aside", "footer", "header", "main", "nav", "section", "search"];
+  function isSectioningElement(element) {
+    return sectioningTagNames.includes(element.tagName.toLowerCase());
+  }
+  var listTagNames = ["ol", "ul"];
+  function isListElement(element) {
+    return listTagNames.includes(element.tagName.toLowerCase());
+  }
+  function getLastElementChildOfTagName(element, tagName) {
+    tagName = tagName.toLowerCase();
+    for (const childElement of Array.from(element.children).reverse()) {
+      if (childElement.tagName.toLowerCase() === tagName) {
+        return childElement;
+      }
+    }
+    return null;
   }
   function addListItem(list, heading, linkPrefix = "") {
     const listItem = document.createElement("li");
@@ -104,16 +121,21 @@ var makeToC = (() => {
     return listItem;
   }
   function addSublist(list) {
-    let lastListItem = list.lastElementChild;
+    let lastListItem = getLastElementChildOfTagName(list, "li");
     if (lastListItem === null) {
       lastListItem = addListItem(list, document.createElement("h6"));
     }
     const listTagName = list.tagName.toLowerCase();
-    const sublist = document.createElement(listTagName);
-    lastListItem.appendChild(sublist);
-    return sublist;
+    const lastListItemLastChildElement = lastListItem.lastElementChild;
+    if (lastListItemLastChildElement !== null && isListElement(lastListItemLastChildElement)) {
+      return lastListItemLastChildElement;
+    } else {
+      const sublist = document.createElement(listTagName);
+      lastListItem.appendChild(sublist);
+      return sublist;
+    }
   }
-  function buildList(content, list, linkPrefix = "") {
+  function buildList(content, list, excludeElements = [], linkPrefix = "", isSublist = false) {
     if (content.nodeType !== Node.ELEMENT_NODE) {
       throw new Error("argument must be an Element node");
     }
@@ -123,10 +145,23 @@ var makeToC = (() => {
     let currentList = list;
     let currentLevelStack = [];
     for (const childElement of Array.from(content.children)) {
-      if (isHeading(childElement)) {
+      let excluded = false;
+      for (const excludeElement of excludeElements) {
+        if (childElement.isSameNode(excludeElement)) {
+          excluded = true;
+          break;
+        }
+      }
+      if (excluded) {
+        continue;
+      }
+      if (isHeadingElement(childElement)) {
         const headingTagName = childElement.tagName.toLowerCase();
         const headingLevel = parseInt(headingTagName[1]);
         if (currentLevelStack.length === 0) {
+          if (isSublist) {
+            currentList = addSublist(currentList);
+          }
           currentLevelStack.push(headingLevel);
         } else {
           const lastHeadingLevel = currentLevelStack[currentLevelStack.length - 1];
@@ -151,17 +186,23 @@ var makeToC = (() => {
           }
         }
         addListItem(currentList, childElement, linkPrefix);
-      } else {
-        buildList(childElement, currentList);
+      } else if (isSectioningElement(childElement)) {
+        currentList = buildList(
+          childElement,
+          currentList,
+          excludeElements,
+          linkPrefix,
+          currentLevelStack.length > 0 || isSublist
+        );
       }
     }
     return list;
   }
-  function makeToC(tocElement, contentParent) {
+  function makeToC(tocElement, contentParent, excludeElements = [], linkPrefix = "") {
     if (contentParent === void 0) {
       contentParent = document.body;
     }
-    const list = buildList(contentParent, void 0, "");
+    const list = buildList(contentParent, void 0, excludeElements, linkPrefix);
     tocElement.appendChild(list);
   }
   return __toCommonJS(contents_exports);

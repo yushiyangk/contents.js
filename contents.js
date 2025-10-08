@@ -4,9 +4,26 @@
 // Browser compatibility: ES6
 // This includes support for all current browsers with any significant market share (at least 0.1%)
 import slugify from "slugify";
-function isHeading(childElement) {
-    const tagName = childElement.tagName.toLowerCase();
+function isHeadingElement(element) {
+    const tagName = element.tagName.toLowerCase();
     return tagName.match(/^h[1-6]$/) !== null;
+}
+const sectioningTagNames = ["address", "article", "aside", "footer", "header", "main", "nav", "section", "search"];
+function isSectioningElement(element) {
+    return sectioningTagNames.includes(element.tagName.toLowerCase());
+}
+const listTagNames = ["ol", "ul"];
+function isListElement(element) {
+    return listTagNames.includes(element.tagName.toLowerCase());
+}
+function getLastElementChildOfTagName(element, tagName) {
+    tagName = tagName.toLowerCase();
+    for (const childElement of Array.from(element.children).reverse()) {
+        if (childElement.tagName.toLowerCase() === tagName) {
+            return childElement;
+        }
+    }
+    return null;
 }
 function addListItem(list, heading, linkPrefix = "") {
     const listItem = document.createElement("li");
@@ -22,16 +39,23 @@ function addListItem(list, heading, linkPrefix = "") {
     return listItem;
 }
 function addSublist(list) {
-    let lastListItem = list.lastElementChild;
+    let lastListItem = getLastElementChildOfTagName(list, "li");
     if (lastListItem === null) {
         lastListItem = addListItem(list, document.createElement("h6")); // empty heading at the lowest level at the start, so that it can be superseded by any real headings after it
     }
     const listTagName = list.tagName.toLowerCase();
-    const sublist = document.createElement(listTagName);
-    lastListItem.appendChild(sublist);
-    return sublist;
+    const lastListItemLastChildElement = lastListItem.lastElementChild;
+    if (lastListItemLastChildElement !== null && isListElement(lastListItemLastChildElement)) {
+        // Do not add a new sublist if there is already one
+        return lastListItemLastChildElement;
+    }
+    else {
+        const sublist = document.createElement(listTagName);
+        lastListItem.appendChild(sublist);
+        return sublist;
+    }
 }
-function buildList(content, list, linkPrefix = "") {
+function buildList(content, list, excludeElements = [], linkPrefix = "", isSublist = false) {
     if (content.nodeType !== Node.ELEMENT_NODE) {
         throw new Error("argument must be an Element node");
     }
@@ -42,10 +66,23 @@ function buildList(content, list, linkPrefix = "") {
     let currentLevelStack = [];
     for (const childElement of Array.from(content.children)) {
         // Use a snapshot of content
-        if (isHeading(childElement)) {
+        let excluded = false;
+        for (const excludeElement of excludeElements) {
+            if (childElement.isSameNode(excludeElement)) {
+                excluded = true;
+                break;
+            }
+        }
+        if (excluded) {
+            continue;
+        }
+        if (isHeadingElement(childElement)) {
             const headingTagName = childElement.tagName.toLowerCase();
             const headingLevel = parseInt(headingTagName[1]);
             if (currentLevelStack.length === 0) {
+                if (isSublist) {
+                    currentList = addSublist(currentList);
+                }
                 currentLevelStack.push(headingLevel);
             }
             else {
@@ -73,16 +110,16 @@ function buildList(content, list, linkPrefix = "") {
             }
             addListItem(currentList, childElement, linkPrefix);
         }
-        else {
-            buildList(childElement, currentList);
+        else if (isSectioningElement(childElement)) {
+            currentList = buildList(childElement, currentList, excludeElements, linkPrefix, currentLevelStack.length > 0 || isSublist);
         }
     }
     return list;
 }
-export default function makeToC(tocElement, contentParent) {
+export default function makeToC(tocElement, contentParent, excludeElements = [], linkPrefix = "") {
     if (contentParent === undefined) {
         contentParent = document.body;
     }
-    const list = buildList(contentParent, undefined, "");
+    const list = buildList(contentParent, undefined, excludeElements, linkPrefix);
     tocElement.appendChild(list);
 }
