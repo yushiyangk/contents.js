@@ -39,12 +39,17 @@ function getLastElementChildOfTagName(element: Element, tagName: string): Elemen
 }
 
 function addListItem(list: HTMLOListElement | HTMLUListElement, heading: HTMLHeadingElement, linkPrefix: string = ""): HTMLLIElement {
+	let fragmentId = heading.getAttribute("id");
+	if (fragmentId === null || fragmentId.length === 0) {
+		fragmentId = slugify(heading.innerText.trim(), { lower: true, strict: true });
+		heading.setAttribute("id", fragmentId);
+	}
+
 	const listItem = document.createElement("li");
 	list.append(listItem);
 
 	const anchor = document.createElement("a");
-	const slug = slugify(heading.innerText.trim(), { lower: true, strict: true });
-	anchor.setAttribute("href", `${linkPrefix}#${slug}`);
+	anchor.setAttribute("href", `${linkPrefix}#${fragmentId}`);
 	for (const childNode of Array.from(heading.childNodes)) {
 		// Clone a snapshot of heading
 		anchor.appendChild(childNode.cloneNode(true));

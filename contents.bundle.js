@@ -110,11 +110,15 @@ var makeToC = (() => {
     return null;
   }
   function addListItem(list, heading, linkPrefix = "") {
+    let fragmentId = heading.getAttribute("id");
+    if (fragmentId === null || fragmentId.length === 0) {
+      fragmentId = (0, import_slugify.default)(heading.innerText.trim(), { lower: true, strict: true });
+      heading.setAttribute("id", fragmentId);
+    }
     const listItem = document.createElement("li");
     list.append(listItem);
     const anchor = document.createElement("a");
-    const slug = (0, import_slugify.default)(heading.innerText.trim(), { lower: true, strict: true });
-    anchor.setAttribute("href", `${linkPrefix}#${slug}`);
+    anchor.setAttribute("href", `${linkPrefix}#${fragmentId}`);
     for (const childNode of Array.from(heading.childNodes)) {
       anchor.appendChild(childNode.cloneNode(true));
     }
