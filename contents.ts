@@ -10,9 +10,14 @@
 import slugify from "slugify";
 
 
-function isHeading(childElement: Element): childElement is HTMLHeadingElement {
-	const tagName = childElement.tagName.toLowerCase();
+function isHeading(element: Element): element is HTMLHeadingElement {
+	const tagName = element.tagName.toLowerCase();
 	return tagName.match(/^h[1-6]$/) !== null;
+}
+
+const sectioningTagNames = ["address", "article", "aside", "footer", "header", "main", "nav", "section", "search"];
+function isSectioning(element: Element): boolean {
+	return sectioningTagNames.includes(element.tagName.toLowerCase());
 }
 
 function addListItem(list: HTMLOListElement | HTMLUListElement, heading: HTMLHeadingElement, linkPrefix: string = ""): HTMLLIElement {
@@ -93,7 +98,7 @@ function buildList(content: Element, list?: HTMLOListElement | HTMLUListElement,
 
 			addListItem(currentList, childElement, linkPrefix);
 
-		} else {
+		} else if (isSectioning(childElement)) {
 			buildList(childElement, currentList);
 		}
 	}
