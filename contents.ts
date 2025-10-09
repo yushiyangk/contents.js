@@ -198,9 +198,9 @@ const makeToC = (() => {
 
 					if (headingLevel < lastHeadingLevel) {
 						while (currentLevelStack.length > 1 && headingLevel < lastHeadingLevel) {
-							const parentList = currentList.parentElement;
+							const parentList = currentList.parentElement?.closest("ul, ol") ?? null;
 							if (parentList === null || !(parentList instanceof HTMLUListElement || parentList instanceof HTMLOListElement)) {
-								throw new Error("parent of sublist is not a valid list element");
+								throw new Error("ancestor of sublist is not a valid list element");
 							}
 							currentList = parentList;
 							currentLevelStack.pop();
