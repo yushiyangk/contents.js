@@ -18,6 +18,7 @@ const makeToC = (() => {
 		maxDepth: number | null,
 		itemClassName: string,
 		currentItemClassName: string,
+		depthDataAttribute: string,
 	}
 	const defaultMakeToCOptions: MakeToCOptions = {
 		excludeElements: [],
@@ -26,6 +27,21 @@ const makeToC = (() => {
 		maxDepth: null,
 		itemClassName: "toc-item",
 		currentItemClassName: "toc-current",
+		depthDataAttribute: "data-toc-depth",
+	}
+	function validateMakeToCOptions(options: MakeToCOptions): boolean {
+		for (const i = 0; i < options.excludeElements.length; i++) {
+			if (!(options.excludeElements[i] instanceof Element)) {
+				throw new Error(`options.excludeElements[${i}] is not an Element, got ${options.excludeElements[i]}`);
+			}
+		}
+		if (options.maxDepth !== null && !Number.isInteger(options.maxDepth)) {
+			throw new Error(`options.maxDepth must be an integer or null, got ${options.maxDepth}`);
+		}
+		if (!options.depthDataAttribute.startsWith("data-")) {
+			throw new Error(`options.depthDataAttribute must start with 'data-', got '${options.depthDataAttribute}'`);
+		}
+		return true;
 	}
 
 	function reifyOptions<T>(options: Partial<T> | undefined, defaultOptions: T): T {
@@ -64,6 +80,7 @@ const makeToC = (() => {
 	function addListItem(
 		list: HTMLOListElement | HTMLUListElement,
 		heading: HTMLHeadingElement,
+		depth: number,
 		options: MakeToCOptions,
 	): HTMLLIElement | null {
 		const fragmentId = heading.getAttribute("id");
@@ -73,7 +90,12 @@ const makeToC = (() => {
 			}
 		}
 
+		if (!Number.isInteger(depth) || depth <= 0) {
+			throw new Error("depth must be a positive integer");
+		}
+
 		const listItem = document.createElement("li");
+		listItem.setAttribute(options.depthDataAttribute, depth.toString());
 		list.append(listItem);
 
 		let tocItemContainer: HTMLElement | null = listItem;
@@ -130,6 +152,10 @@ const makeToC = (() => {
 		if (options.maxDepth !== null && options.maxDepth <= 0) {
 			console.warn("buildList: options.maxDepth is less than or equal to 0, returning empty list");
 			return list;
+		}
+
+		if (!Number.isInteger(baseDepth) || baseDepth <= 0) {
+			throw new Error("baseDepth must be a positive integer");
 		}
 
 		let currentList = list;
@@ -190,7 +216,7 @@ const makeToC = (() => {
 					}
 				}
 
-				addListItem(currentList, childElement, options);
+				addListItem(currentList, childElement, baseDepth + currentLevelStack.length - 1, options);
 
 			} else if (isSectioningElement(childElement)) {
 				currentList = buildList(
@@ -215,6 +241,7 @@ const makeToC = (() => {
 		}
 
 		const reifiedOptions = reifyOptions(options, defaultMakeToCOptions);
+		validateMakeToCOptions(reifiedOptions);
 
 		if (isListElement(tocContainer)) {
 			buildList(contentParent, tocContainer, reifiedOptions);
