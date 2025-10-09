@@ -30,7 +30,7 @@ const makeToC = (() => {
 		depthDataAttribute: "data-toc-depth",
 	}
 	function validateMakeToCOptions(options: MakeToCOptions): boolean {
-		for (const i = 0; i < options.excludeElements.length; i++) {
+		for (let i = 0; i < options.excludeElements.length; i++) {
 			if (!(options.excludeElements[i] instanceof Element)) {
 				throw new Error(`options.excludeElements[${i}] is not an Element, got ${options.excludeElements[i]}`);
 			}
