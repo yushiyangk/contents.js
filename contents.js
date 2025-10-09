@@ -1,9 +1,5 @@
 // contents.js
 // version 0.1
-// Yu Shiyang <yu.shiyang@gnayihs.uy>
-// Browser compatibility: ES6
-// This includes support for all current browsers with any significant market share (at least 0.1%)
-import slugify from "slugify";
 const DEFAULT_LIST_TAG_NAME = "ul";
 const defaultMakeToCOptions = {
     excludeElements: [],
@@ -39,19 +35,19 @@ function getLastElementChildOfTagName(element, tagName) {
 }
 function addListItem(list, heading, linkPrefix = "") {
     let fragmentId = heading.getAttribute("id");
-    if (fragmentId === null || fragmentId.length === 0) {
-        fragmentId = slugify(heading.innerText.trim(), { lower: true, strict: true });
-        heading.setAttribute("id", fragmentId);
-    }
     const listItem = document.createElement("li");
     list.append(listItem);
-    const anchor = document.createElement("a");
-    anchor.setAttribute("href", `${linkPrefix}#${fragmentId}`);
-    for (const childNode of Array.from(heading.childNodes)) {
-        // Clone a snapshot of heading
-        anchor.appendChild(childNode.cloneNode(true));
+    let tocItemContainer = listItem;
+    if (fragmentId !== null && fragmentId !== "") {
+        const anchor = document.createElement("a");
+        anchor.setAttribute("href", `${linkPrefix}#${fragmentId}`);
+        tocItemContainer = anchor;
+        listItem.appendChild(anchor);
     }
-    listItem.appendChild(anchor);
+    // Clone a snapshot of heading
+    for (const childNode of Array.from(heading.childNodes)) {
+        tocItemContainer.appendChild(childNode.cloneNode(true));
+    }
     return listItem;
 }
 function addSublist(list) {

@@ -65,21 +65,22 @@ function getLastElementChildOfTagName(element: Element, tagName: string): Elemen
 
 function addListItem(list: HTMLOListElement | HTMLUListElement, heading: HTMLHeadingElement, linkPrefix: string = ""): HTMLLIElement {
 	let fragmentId = heading.getAttribute("id");
-	if (fragmentId === null || fragmentId.length === 0) {
-		fragmentId = slugify(heading.innerText.trim(), { lower: true, strict: true });
-		heading.setAttribute("id", fragmentId);
-	}
 
 	const listItem = document.createElement("li");
 	list.append(listItem);
 
-	const anchor = document.createElement("a");
-	anchor.setAttribute("href", `${linkPrefix}#${fragmentId}`);
-	for (const childNode of Array.from(heading.childNodes)) {
-		// Clone a snapshot of heading
-		anchor.appendChild(childNode.cloneNode(true));
+	let tocItemContainer: HTMLElement = listItem;
+	if (fragmentId !== null && fragmentId !== "") {
+		const anchor = document.createElement("a");
+		anchor.setAttribute("href", `${linkPrefix}#${fragmentId}`);
+		tocItemContainer = anchor;
+		listItem.appendChild(anchor);
 	}
-	listItem.appendChild(anchor);
+
+	// Clone a snapshot of heading
+	for (const childNode of Array.from(heading.childNodes)) {
+		tocItemContainer.appendChild(childNode.cloneNode(true));
+	}
 
 	return listItem;
 }
