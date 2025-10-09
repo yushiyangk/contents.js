@@ -9,6 +9,7 @@
 
 const makeToC = (() => {
 	const DEFAULT_LIST_TAG_NAME = "ul";
+	const SCROLL_UPDATE_RATE_MS = 100;
 
 
 	interface MakeToCOptions {
@@ -43,6 +44,7 @@ const makeToC = (() => {
 		}
 		return true;
 	}
+
 
 	function reifyOptions<T>(options: Partial<T> | undefined, defaultOptions: T): T {
 		return {
@@ -146,7 +148,7 @@ const makeToC = (() => {
 		list?: HTMLOListElement | HTMLUListElement,
 		options: MakeToCOptions = {...defaultMakeToCOptions},
 		baseDepth: number = 1,
-	): HTMLOListElement | HTMLUListElement {
+	): [HTMLOListElement | HTMLUListElement, HTMLHeadingElement[]] {
 		if (content.nodeType !== Node.ELEMENT_NODE) {
 			throw new Error("argument must be an Element node");
 		}
@@ -156,7 +158,7 @@ const makeToC = (() => {
 
 		if (options.maxDepth !== null && options.maxDepth <= 0) {
 			console.warn("buildList: options.maxDepth is less than or equal to 0, returning empty list");
-			return list;
+			return [list, []];
 		}
 
 		if (!Number.isInteger(baseDepth) || baseDepth <= 0) {
@@ -164,7 +166,8 @@ const makeToC = (() => {
 		}
 
 		let currentList = list;
-		let currentLevelStack: number[] = [];
+		const currentLevelStack: number[] = [];
+		const listedHeadings: HTMLHeadingElement[] = [];
 
 		for (const childElement of Array.from(content.children)) {
 			// Use a snapshot of content
@@ -222,19 +225,129 @@ const makeToC = (() => {
 				}
 
 				addListItem(currentList, childElement, baseDepth + currentLevelStack.length - 1, options);
+				listedHeadings.push(childElement);
 
 			} else if (isSectioningElement(childElement)) {
-				currentList = buildList(
+				const [newCurrentList, sublistedHeadings] = buildList(
 					childElement,
 					currentList,
 					options,
 					baseDepth + currentLevelStack.length,
 				);
+				currentList = newCurrentList;
+				listedHeadings.push(...sublistedHeadings);
 			}
 		}
 
-		return list;
+		return [list, listedHeadings];
 	}
+
+
+	function flattenListElement(list: HTMLOListElement | HTMLUListElement): HTMLLIElement[] {
+		const flatListItems: HTMLLIElement[] = [];
+		for (const listItem of list.querySelectorAll("li")) {
+			flatListItems.push(listItem);
+			const sublists: NodeListOf<HTMLOListElement | HTMLUListElement> = listItem.querySelectorAll(listTagNames.join(", "));
+			for (const sublist of sublists) {
+				const flatSublistItems = flattenListElement(sublist);
+				flatListItems.push(...flatSublistItems);
+			}
+		}
+		return flatListItems;
+	}
+
+	let rateLimit = false;
+	function registerObservers(
+		tocList: HTMLOListElement | HTMLUListElement,
+		listedHeadings: HTMLHeadingElement[],
+		contentParent: Element,
+		options: MakeToCOptions,
+	) {
+		if (options.currentItemClassName === null) {
+			return;
+		}
+
+		const listItems = flattenListElement(tocList);
+		let currentIndex: number = -1;
+		let headingPositions: number[] = [];
+
+		const updateCurrentHeading = () => {
+			if (rateLimit) {
+				return;
+			}
+
+			if (options.currentItemClassName === null) {
+				return;
+			}
+
+			rateLimit = true;
+			setTimeout(() => {
+				rateLimit = false;
+			}, SCROLL_UPDATE_RATE_MS);
+
+			const scrollPosition = window.scrollY;
+
+			let low = 0;
+			let high = headingPositions.length - 1;
+			let mid = -1;
+			while (low <= high) {
+				mid = low + Math.floor((high - low) / 2);
+				if (headingPositions[mid] === scrollPosition) {
+					break;
+				} else if (headingPositions[mid] > scrollPosition) {
+					high = mid - 1;
+				} else {
+					low = mid + 1;
+				}
+			}
+
+			while (mid >= 0 && headingPositions[mid] > scrollPosition) {
+				mid--;
+			}
+
+			// Check against live heading positions in case memoised position is outdated
+			while (mid < headingPositions.length - 1 && headingPositions[mid + 1] <= scrollPosition) {
+				mid++;
+			}
+
+			if (mid < 0) {
+				if (currentIndex !== -1) {
+					if (currentIndex >= 0 && currentIndex < listItems.length) {
+						listItems[currentIndex].classList.remove(options.currentItemClassName);
+					}
+					currentIndex = -1;
+				}
+			} else {
+				if (currentIndex !== mid) {
+					if (currentIndex >= 0 && currentIndex < listItems.length) {
+						listItems[currentIndex].classList.remove(options.currentItemClassName);
+					}
+					listItems[mid].classList.add(options.currentItemClassName);
+					currentIndex = mid;
+				}
+			}
+		}
+
+		const updateHeadingPositions = () => {
+			headingPositions = listedHeadings.map((heading) => (
+				heading.getBoundingClientRect().top + window.scrollY
+			));
+			updateCurrentHeading();
+		}
+
+		window.addEventListener("load", updateHeadingPositions);
+		window.addEventListener("resize", updateHeadingPositions);
+		const mutationObserver = new MutationObserver(updateHeadingPositions);
+		mutationObserver.observe(contentParent, {
+			subtree: true,
+			childList: true,
+			attributes: true,
+			characterData: true,
+		});
+
+		document.addEventListener("scroll", updateCurrentHeading);
+	}
+
 
 	return (
 		tocContainer: Element,
@@ -249,10 +362,12 @@ const makeToC = (() => {
 		validateMakeToCOptions(reifiedOptions);
 
 		if (isListElement(tocContainer)) {
-			buildList(contentParent, tocContainer, reifiedOptions);
+			const [tocList, listedHeadings] = buildList(contentParent, tocContainer, reifiedOptions);
+			registerObservers(tocList, listedHeadings, contentParent, reifiedOptions);
 		} else {
-			const list = buildList(contentParent, undefined, reifiedOptions);
-			tocContainer.appendChild(list);
+			const [tocList, listedHeadings] = buildList(contentParent, undefined, reifiedOptions);
+			tocContainer.appendChild(tocList);
+			registerObservers(tocList, listedHeadings, contentParent, reifiedOptions);
 		}
 	};
 })();
