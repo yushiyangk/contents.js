@@ -7,9 +7,6 @@
 // This includes support for all current browsers with any significant market share (at least 0.1%)
 
 
-import slugify from "slugify";
-
-
 const DEFAULT_LIST_TAG_NAME = "ul";
 
 

@@ -1,5 +1,8 @@
 // contents.js
 // version 0.1
+// Yu Shiyang <yu.shiyang@gnayihs.uy>
+// Browser compatibility: ES6
+// This includes support for all current browsers with any significant market share (at least 0.1%)
 const DEFAULT_LIST_TAG_NAME = "ul";
 const defaultMakeToCOptions = {
     excludeElements: [],
