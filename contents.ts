@@ -16,9 +16,9 @@ const makeToC = (() => {
 		linkPrefix: string,
 		linkableOnly: boolean,
 		maxDepth: number | null,
-		itemClassName: string,
-		currentItemClassName: string,
-		depthDataAttribute: string,
+		itemClassName: string | null,
+		currentItemClassName: string | null,
+		depthDataAttribute: string | null,
 	}
 	const defaultMakeToCOptions: MakeToCOptions = {
 		excludeElements: [],
@@ -38,7 +38,7 @@ const makeToC = (() => {
 		if (options.maxDepth !== null && !Number.isInteger(options.maxDepth)) {
 			throw new Error(`options.maxDepth must be an integer or null, got ${options.maxDepth}`);
 		}
-		if (!options.depthDataAttribute.startsWith("data-")) {
+		if (options.depthDataAttribute !== null && !options.depthDataAttribute.startsWith("data-")) {
 			throw new Error(`options.depthDataAttribute must start with 'data-', got '${options.depthDataAttribute}'`);
 		}
 		return true;
@@ -95,8 +95,12 @@ const makeToC = (() => {
 		}
 
 		const listItem = document.createElement("li");
-		listItem.classList.add(options.itemClassName);
-		listItem.setAttribute(options.depthDataAttribute, depth.toString());
+		if (options.itemClassName !== null) {
+			listItem.classList.add(options.itemClassName);
+		}
+		if (options.depthDataAttribute !== null) {
+			listItem.setAttribute(options.depthDataAttribute, depth.toString());
+		}
 		list.append(listItem);
 
 		let tocItemContainer: HTMLElement | null = listItem;
