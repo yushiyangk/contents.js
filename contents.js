@@ -64,6 +64,7 @@ const makeToC = (() => {
             throw new Error("depth must be a positive integer");
         }
         const listItem = document.createElement("li");
+        listItem.classList.add(options.itemClassName);
         listItem.setAttribute(options.depthDataAttribute, depth.toString());
         list.append(listItem);
         let tocItemContainer = listItem;

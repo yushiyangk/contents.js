@@ -95,6 +95,7 @@ const makeToC = (() => {
 		}
 
 		const listItem = document.createElement("li");
+		listItem.classList.add(options.itemClassName);
 		listItem.setAttribute(options.depthDataAttribute, depth.toString());
 		list.append(listItem);
 
