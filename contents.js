@@ -133,12 +133,17 @@ const makeToC = (() => {
         }
         return list;
     }
-    return (tocElement, contentParent, options) => {
+    return (tocContainer, contentParent, options) => {
         if (contentParent === undefined) {
             contentParent = document.body;
         }
         const reifiedOptions = reifyOptions(options, defaultMakeToCOptions);
-        const list = buildList(contentParent, undefined, reifiedOptions);
-        tocElement.appendChild(list);
+        if (isListElement(tocContainer)) {
+            buildList(contentParent, tocContainer, reifiedOptions);
+        }
+        else {
+            const list = buildList(contentParent, undefined, reifiedOptions);
+            tocContainer.appendChild(list);
+        }
     };
 })();

@@ -186,7 +186,7 @@ const makeToC = (() => {
 	}
 
 	return (
-		tocElement: Element,
+		tocContainer: Element,
 		contentParent?: Element,
 		options?: Partial<MakeToCOptions>,
 	) => {
@@ -196,7 +196,11 @@ const makeToC = (() => {
 
 		const reifiedOptions = reifyOptions(options, defaultMakeToCOptions);
 
-		const list = buildList(contentParent, undefined, reifiedOptions);
-		tocElement.appendChild(list);
+		if (isListElement(tocContainer)) {
+			buildList(contentParent, tocContainer, reifiedOptions);
+		} else {
+			const list = buildList(contentParent, undefined, reifiedOptions);
+			tocContainer.appendChild(list);
+		}
 	};
 })();
