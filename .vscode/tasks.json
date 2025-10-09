@@ -10,7 +10,7 @@
 			},
 			"problemMatcher": [],
 			"label": "npm: build",
-			"detail": "npx tsc && esbuild contents.ts --bundle --target=es6 --global-name=makeToC --footer:js=\"makeToC = makeToC.default;\" --outfile=contents.bundle.js"
+			"detail": "npx tsc"
 		},
 	]
 }

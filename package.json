@@ -1,9 +1,8 @@
 {
   "scripts": {
-    "build": "npx tsc && esbuild contents.ts --bundle --target=es6 --global-name=makeToC --footer:js=\"makeToC = makeToC.default;\" --outfile=contents.bundle.js"
+    "build": "npx tsc"
   },
   "devDependencies": {
-    "esbuild": "^0.25.10",
     "typescript": "^5.9.3"
   }
 }
