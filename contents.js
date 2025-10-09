@@ -38,18 +38,23 @@ const makeToC = (() => {
         }
         return null;
     }
-    function addListItem(list, heading, linkPrefix = "") {
-        let fragmentId = heading.getAttribute("id");
+    function addListItem(list, heading, options) {
+        const fragmentId = heading.getAttribute("id");
+        if (fragmentId === null || fragmentId === "") {
+            if (options.linkableOnly) {
+                return null;
+            }
+        }
         const listItem = document.createElement("li");
         list.append(listItem);
         let tocItemContainer = listItem;
         if (fragmentId !== null && fragmentId !== "") {
             const anchor = document.createElement("a");
-            anchor.setAttribute("href", `${linkPrefix}#${fragmentId}`);
+            anchor.setAttribute("href", `${options.linkPrefix}#${fragmentId}`);
             tocItemContainer = anchor;
             listItem.appendChild(anchor);
         }
-        // Clone a snapshot of heading
+        // Clone a snapshot of heading to tocItemContainer
         for (const childNode of Array.from(heading.childNodes)) {
             tocItemContainer.appendChild(childNode.cloneNode(true));
         }
@@ -58,7 +63,7 @@ const makeToC = (() => {
     function addSublist(list) {
         let lastListItem = getLastElementChildOfTagName(list, "li");
         if (lastListItem === null) {
-            lastListItem = addListItem(list, document.createElement("h6")); // empty heading at the lowest level at the start, so that it can be superseded by any real headings after it
+            throw new Error("cannot add sublist to a list without any list items");
         }
         const listTagName = list.tagName.toLowerCase();
         const lastListItemLastChildElement = lastListItem.lastElementChild;
@@ -125,7 +130,7 @@ const makeToC = (() => {
                         currentLevelStack.push(headingLevel);
                     }
                 }
-                addListItem(currentList, childElement, options.linkPrefix);
+                addListItem(currentList, childElement, options);
             }
             else if (isSectioningElement(childElement)) {
                 currentList = buildList(childElement, currentList, options, currentLevelStack.length > 0 || isSublist);
