@@ -5,11 +5,22 @@
 // This includes support for all current browsers with any significant market share (at least 0.1%)
 import slugify from "slugify";
 const DEFAULT_LIST_TAG_NAME = "ul";
+const defaultMakeToCOptions = {
+    excludeElements: [],
+    linkPrefix: "",
+    linkableOnly: false,
+    maxDepth: null,
+    itemClassName: "toc-item",
+    currentItemClassName: "toc-current",
+};
+function reifyOptions(options, defaultOptions) {
+    return Object.assign(Object.assign({}, defaultOptions), (options === undefined ? {} : options));
+}
 function isHeadingElement(element) {
     const tagName = element.tagName.toLowerCase();
     return tagName.match(/^h[1-6]$/) !== null;
 }
-const sectioningTagNames = ["address", "article", "aside", "footer", "header", "main", "nav", "section", "search"];
+const sectioningTagNames = ["address", "article", "aside", "footer", "header", "main", "nav", "section", "search"]; // https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements#content_sectioning
 function isSectioningElement(element) {
     return sectioningTagNames.includes(element.tagName.toLowerCase());
 }
@@ -60,7 +71,7 @@ function addSublist(list) {
         return sublist;
     }
 }
-function buildList(content, list, excludeElements = [], linkPrefix = "", isSublist = false) {
+function buildList(content, list, options = Object.assign({}, defaultMakeToCOptions), isSublist = false) {
     if (content.nodeType !== Node.ELEMENT_NODE) {
         throw new Error("argument must be an Element node");
     }
@@ -72,7 +83,7 @@ function buildList(content, list, excludeElements = [], linkPrefix = "", isSubli
     for (const childElement of Array.from(content.children)) {
         // Use a snapshot of content
         let excluded = false;
-        for (const excludeElement of excludeElements) {
+        for (const excludeElement of options.excludeElements) {
             if (childElement.isSameNode(excludeElement)) {
                 excluded = true;
                 break;
@@ -113,18 +124,19 @@ function buildList(content, list, excludeElements = [], linkPrefix = "", isSubli
                     currentLevelStack.push(headingLevel);
                 }
             }
-            addListItem(currentList, childElement, linkPrefix);
+            addListItem(currentList, childElement, options.linkPrefix);
         }
         else if (isSectioningElement(childElement)) {
-            currentList = buildList(childElement, currentList, excludeElements, linkPrefix, currentLevelStack.length > 0 || isSublist);
+            currentList = buildList(childElement, currentList, options, currentLevelStack.length > 0 || isSublist);
         }
     }
     return list;
 }
-export default function makeToC(tocElement, contentParent, excludeElements = [], linkPrefix = "") {
+export default function makeToC(tocElement, contentParent, options) {
     if (contentParent === undefined) {
         contentParent = document.body;
     }
-    const list = buildList(contentParent, undefined, excludeElements, linkPrefix);
+    const reifiedOptions = reifyOptions(options, defaultMakeToCOptions);
+    const list = buildList(contentParent, undefined, reifiedOptions);
     tocElement.appendChild(list);
 }

@@ -4,8 +4,22 @@ var makeToC = (() => {
   var __defProp = Object.defineProperty;
   var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
   var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __getOwnPropSymbols = Object.getOwnPropertySymbols;
   var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __propIsEnum = Object.prototype.propertyIsEnumerable;
+  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __spreadValues = (a, b) => {
+    for (var prop in b || (b = {}))
+      if (__hasOwnProp.call(b, prop))
+        __defNormalProp(a, prop, b[prop]);
+    if (__getOwnPropSymbols)
+      for (var prop of __getOwnPropSymbols(b)) {
+        if (__propIsEnum.call(b, prop))
+          __defNormalProp(a, prop, b[prop]);
+      }
+    return a;
+  };
   var __commonJS = (cb, mod) => function __require() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
@@ -88,6 +102,17 @@ var makeToC = (() => {
   });
   var import_slugify = __toESM(require_slugify());
   var DEFAULT_LIST_TAG_NAME = "ul";
+  var defaultMakeToCOptions = {
+    excludeElements: [],
+    linkPrefix: "",
+    linkableOnly: false,
+    maxDepth: null,
+    itemClassName: "toc-item",
+    currentItemClassName: "toc-current"
+  };
+  function reifyOptions(options, defaultOptions) {
+    return __spreadValues(__spreadValues({}, defaultOptions), options === void 0 ? {} : options);
+  }
   function isHeadingElement(element) {
     const tagName = element.tagName.toLowerCase();
     return tagName.match(/^h[1-6]$/) !== null;
@@ -140,7 +165,7 @@ var makeToC = (() => {
       return sublist;
     }
   }
-  function buildList(content, list, excludeElements = [], linkPrefix = "", isSublist = false) {
+  function buildList(content, list, options = __spreadValues({}, defaultMakeToCOptions), isSublist = false) {
     if (content.nodeType !== Node.ELEMENT_NODE) {
       throw new Error("argument must be an Element node");
     }
@@ -151,7 +176,7 @@ var makeToC = (() => {
     let currentLevelStack = [];
     for (const childElement of Array.from(content.children)) {
       let excluded = false;
-      for (const excludeElement of excludeElements) {
+      for (const excludeElement of options.excludeElements) {
         if (childElement.isSameNode(excludeElement)) {
           excluded = true;
           break;
@@ -190,24 +215,24 @@ var makeToC = (() => {
             currentLevelStack.push(headingLevel);
           }
         }
-        addListItem(currentList, childElement, linkPrefix);
+        addListItem(currentList, childElement, options.linkPrefix);
       } else if (isSectioningElement(childElement)) {
         currentList = buildList(
           childElement,
           currentList,
-          excludeElements,
-          linkPrefix,
+          options,
           currentLevelStack.length > 0 || isSublist
         );
       }
     }
     return list;
   }
-  function makeToC(tocElement, contentParent, excludeElements = [], linkPrefix = "") {
+  function makeToC(tocElement, contentParent, options) {
     if (contentParent === void 0) {
       contentParent = document.body;
     }
-    const list = buildList(contentParent, void 0, excludeElements, linkPrefix);
+    const reifiedOptions = reifyOptions(options, defaultMakeToCOptions);
+    const list = buildList(contentParent, void 0, reifiedOptions);
     tocElement.appendChild(list);
   }
   return __toCommonJS(contents_exports);

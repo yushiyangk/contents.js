@@ -13,12 +13,37 @@ import slugify from "slugify";
 const DEFAULT_LIST_TAG_NAME = "ul";
 
 
+interface MakeToCOptions {
+	excludeElements: Element[],
+	linkPrefix: string,
+	linkableOnly: boolean,
+	maxDepth: number | null,
+	itemClassName: string,
+	currentItemClassName: string,
+}
+const defaultMakeToCOptions: MakeToCOptions = {
+	excludeElements: [],
+	linkPrefix: "",
+	linkableOnly: false,
+	maxDepth: null,
+	itemClassName: "toc-item",
+	currentItemClassName: "toc-current",
+}
+
+function reifyOptions<T>(options: Partial<T> | undefined, defaultOptions: T): T {
+	return {
+		...defaultOptions,
+		...(options === undefined ? {} : options),
+	};
+}
+
+
 function isHeadingElement(element: Element): element is HTMLHeadingElement {
 	const tagName = element.tagName.toLowerCase();
 	return tagName.match(/^h[1-6]$/) !== null;
 }
 
-const sectioningTagNames = ["address", "article", "aside", "footer", "header", "main", "nav", "section", "search"];
+const sectioningTagNames = ["address", "article", "aside", "footer", "header", "main", "nav", "section", "search"];  // https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements#content_sectioning
 function isSectioningElement(element: Element): element is HTMLElement {
 	return sectioningTagNames.includes(element.tagName.toLowerCase());
 }
@@ -84,8 +109,7 @@ function addSublist(list: HTMLOListElement | HTMLUListElement): HTMLOListElement
 function buildList(
 	content: Element,
 	list?: HTMLOListElement | HTMLUListElement,
-	excludeElements: Element[] = [],
-	linkPrefix: string = "",
+	options: MakeToCOptions = {...defaultMakeToCOptions},
 	isSublist: boolean = false,
 ): HTMLOListElement | HTMLUListElement {
 	if (content.nodeType !== Node.ELEMENT_NODE) {
@@ -102,7 +126,7 @@ function buildList(
 		// Use a snapshot of content
 
 		let excluded = false;
-		for (const excludeElement of excludeElements) {
+		for (const excludeElement of options.excludeElements) {
 			if (childElement.isSameNode(excludeElement)) {
 				excluded = true;
 				break;
@@ -147,14 +171,13 @@ function buildList(
 				}
 			}
 
-			addListItem(currentList, childElement, linkPrefix);
+			addListItem(currentList, childElement, options.linkPrefix);
 
 		} else if (isSectioningElement(childElement)) {
 			currentList = buildList(
 				childElement,
 				currentList,
-				excludeElements,
-				linkPrefix,
+				options,
 				currentLevelStack.length > 0 || isSublist,
 			);
 		}
@@ -163,16 +186,18 @@ function buildList(
 	return list;
 }
 
+
 export default function makeToC(
 	tocElement: Element,
 	contentParent?: Element,
-	excludeElements: Element[] = [],
-	linkPrefix: string = "",
+	options?: Partial<MakeToCOptions>,
 ): void {
 	if (contentParent === undefined) {
 		contentParent = document.body;
 	}
 
-	const list = buildList(contentParent, undefined, excludeElements, linkPrefix);
+	const reifiedOptions = reifyOptions(options, defaultMakeToCOptions);
+
+	const list = buildList(contentParent, undefined, reifiedOptions);
 	tocElement.appendChild(list);
 }
