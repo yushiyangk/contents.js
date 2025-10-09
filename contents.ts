@@ -118,13 +118,18 @@ const makeToC = (() => {
 		content: Element,
 		list?: HTMLOListElement | HTMLUListElement,
 		options: MakeToCOptions = {...defaultMakeToCOptions},
-		isSublist: boolean = false,
+		baseDepth: number = 1,
 	): HTMLOListElement | HTMLUListElement {
 		if (content.nodeType !== Node.ELEMENT_NODE) {
 			throw new Error("argument must be an Element node");
 		}
 		if (list === undefined) {
 			list = document.createElement(DEFAULT_LIST_TAG_NAME);
+		}
+
+		if (options.maxDepth !== null && options.maxDepth <= 0) {
+			console.warn("buildList: options.maxDepth is less than or equal to 0, returning empty list");
+			return list;
 		}
 
 		let currentList = list;
@@ -149,7 +154,10 @@ const makeToC = (() => {
 				const headingLevel = parseInt(headingTagName[1]);
 
 				if (currentLevelStack.length === 0) {
-					if (isSublist) {
+					if (options.maxDepth !== null && baseDepth > options.maxDepth) {  // baseDepth + currentLevelStack.length, but the latter is 0
+						continue;
+					}
+					if (baseDepth > 1) {  // if in a sublist
 						currentList = addSublist(currentList);
 					}
 					currentLevelStack.push(headingLevel);
@@ -174,6 +182,9 @@ const makeToC = (() => {
 						}
 
 					} else if (headingLevel > lastHeadingLevel) {
+						if (options.maxDepth !== null && baseDepth + currentLevelStack.length > options.maxDepth) {
+							continue;
+						}
 						currentList = addSublist(currentList);
 						currentLevelStack.push(headingLevel);
 					}
@@ -186,7 +197,7 @@ const makeToC = (() => {
 					childElement,
 					currentList,
 					options,
-					currentLevelStack.length > 0 || isSublist,
+					baseDepth + currentLevelStack.length,
 				);
 			}
 		}
