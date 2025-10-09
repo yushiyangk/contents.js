@@ -86,7 +86,7 @@ const makeToC = (() => {
 	function addSublist(list: HTMLOListElement | HTMLUListElement): HTMLOListElement | HTMLUListElement {
 		let lastListItem = getLastElementChildOfTagName(list, "li");
 		if (lastListItem === null) {
-			lastListItem = addListItem(list, document.createElement("h6"));  // empty heading at the lowest level at the start, so that it can be superseded by any real headings after it
+			throw new Error("cannot add sublist to a list without any list items");
 		}
 
 		const listTagName = list.tagName.toLowerCase();
