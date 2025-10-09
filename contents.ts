@@ -64,8 +64,8 @@ const makeToC = (() => {
 		return sectioningTagNames.includes(element.tagName.toLowerCase());
 	}
 
-	const listTagNames = ["ol", "ul"];
-	function isListElement(element: Element): element is HTMLOListElement | HTMLUListElement {
+	const listTagNames = ["ul", "menu", "ol"];
+	function isListElement(element: Element): element is HTMLUListElement | HTMLMenuElement | HTMLOListElement {
 		return listTagNames.includes(element.tagName.toLowerCase());
 	}
 
@@ -80,7 +80,7 @@ const makeToC = (() => {
 	}
 
 	function addListItem(
-		list: HTMLOListElement | HTMLUListElement,
+		list: HTMLUListElement | HTMLMenuElement | HTMLOListElement,
 		heading: HTMLHeadingElement,
 		depth: number,
 		options: MakeToCOptions,
@@ -121,7 +121,7 @@ const makeToC = (() => {
 		return listItem;
 	}
 
-	function addSublist(list: HTMLOListElement | HTMLUListElement): HTMLOListElement | HTMLUListElement {
+	function addSublist(list: HTMLUListElement | HTMLMenuElement | HTMLOListElement): HTMLUListElement | HTMLMenuElement | HTMLOListElement {
 		let lastListItem = getLastElementChildOfTagName(list, "li");
 		if (lastListItem === null) {
 			throw new Error("cannot add sublist to a list without any list items");
@@ -135,7 +135,7 @@ const makeToC = (() => {
 			return lastListItemLastChildElement;
 
 		} else {
-			const sublist = document.createElement(listTagName) as HTMLOListElement | HTMLUListElement;
+			const sublist = document.createElement(listTagName) as HTMLUListElement | HTMLMenuElement | HTMLOListElement;
 			lastListItem.appendChild(sublist);
 
 			return sublist;
@@ -145,10 +145,10 @@ const makeToC = (() => {
 
 	function buildList(
 		content: Element,
-		list?: HTMLOListElement | HTMLUListElement,
+		list?: HTMLUListElement | HTMLMenuElement | HTMLOListElement,
 		options: MakeToCOptions = {...defaultMakeToCOptions},
 		baseDepth: number = 1,
-	): [HTMLOListElement | HTMLUListElement, HTMLHeadingElement[]] {
+	): [HTMLUListElement | HTMLMenuElement | HTMLOListElement, HTMLHeadingElement[]] {
 		if (content.nodeType !== Node.ELEMENT_NODE) {
 			throw new Error("argument must be an Element node");
 		}
@@ -202,7 +202,7 @@ const makeToC = (() => {
 					if (headingLevel < lastHeadingLevel) {
 						while (currentLevelStack.length > 1 && headingLevel < lastHeadingLevel) {
 							const parentList = currentList.parentElement?.closest("ul, ol") ?? null;
-							if (parentList === null || !(parentList instanceof HTMLUListElement || parentList instanceof HTMLOListElement)) {
+							if (parentList === null || !isListElement(parentList)) {
 								throw new Error("ancestor of sublist is not a valid list element");
 							}
 							currentList = parentList;
@@ -243,11 +243,11 @@ const makeToC = (() => {
 	}
 
 
-	function flattenListElement(list: HTMLOListElement | HTMLUListElement): HTMLLIElement[] {
+	function flattenListElement(list: HTMLUListElement | HTMLMenuElement | HTMLOListElement): HTMLLIElement[] {
 		const flatListItems: HTMLLIElement[] = [];
 		for (const listItem of list.querySelectorAll("li")) {
 			flatListItems.push(listItem);
-			const sublists: NodeListOf<HTMLOListElement | HTMLUListElement> = listItem.querySelectorAll(listTagNames.join(", "));
+			const sublists: NodeListOf<HTMLUListElement | HTMLMenuElement | HTMLOListElement> = listItem.querySelectorAll(listTagNames.join(", "));
 			for (const sublist of sublists) {
 				const flatSublistItems = flattenListElement(sublist);
 				flatListItems.push(...flatSublistItems);
@@ -258,7 +258,7 @@ const makeToC = (() => {
 
 	let rateLimit = false;
 	function registerObservers(
-		tocList: HTMLOListElement | HTMLUListElement,
+		tocList: HTMLUListElement | HTMLMenuElement | HTMLOListElement,
 		listedHeadings: HTMLHeadingElement[],
 		contentParent: Element,
 		options: MakeToCOptions,

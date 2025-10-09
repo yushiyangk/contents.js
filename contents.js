@@ -41,7 +41,7 @@ const makeToC = (() => {
     function isSectioningElement(element) {
         return sectioningTagNames.includes(element.tagName.toLowerCase());
     }
-    const listTagNames = ["ol", "ul"];
+    const listTagNames = ["ul", "menu", "ol"];
     function isListElement(element) {
         return listTagNames.includes(element.tagName.toLowerCase());
     }
@@ -149,7 +149,7 @@ const makeToC = (() => {
                     if (headingLevel < lastHeadingLevel) {
                         while (currentLevelStack.length > 1 && headingLevel < lastHeadingLevel) {
                             const parentList = (_b = (_a = currentList.parentElement) === null || _a === void 0 ? void 0 : _a.closest("ul, ol")) !== null && _b !== void 0 ? _b : null;
-                            if (parentList === null || !(parentList instanceof HTMLUListElement || parentList instanceof HTMLOListElement)) {
+                            if (parentList === null || !isListElement(parentList)) {
                                 throw new Error("ancestor of sublist is not a valid list element");
                             }
                             currentList = parentList;
