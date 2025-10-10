@@ -7,6 +7,7 @@
 const makeToC = (() => {
     const DEFAULT_LIST_TAG_NAME = "ul";
     const SCROLL_UPDATE_RATE_MS = 100;
+    const WINDOW_ONLOAD_UPDATE_DELAY_MS = 1000;
     const defaultMakeToCOptions = {
         excludeElements: [],
         margin: 0,
@@ -277,6 +278,9 @@ const makeToC = (() => {
             updateCurrentHeading();
         };
         window.addEventListener("load", updateHeadingPositions);
+        window.addEventListener("load", () => {
+            setTimeout(updateHeadingPositions, WINDOW_ONLOAD_UPDATE_DELAY_MS);
+        });
         window.addEventListener("resize", updateHeadingPositions);
         const mutationObserver = new MutationObserver(updateHeadingPositions);
         mutationObserver.observe(contentParent, {
