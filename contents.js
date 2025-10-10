@@ -9,6 +9,7 @@ const makeToC = (() => {
     const SCROLL_UPDATE_RATE_MS = 100;
     const defaultMakeToCOptions = {
         excludeElements: [],
+        margin: 0,
         linkPrefix: "",
         linkableOnly: false,
         maxDepth: null,
@@ -202,19 +203,26 @@ const makeToC = (() => {
         let currentIndex = -1;
         let headingPositions = [];
         const currentItemLabel = options.currentItemLabel;
+        let margin = options.margin;
+        if (typeof margin === "string") {
+            const dummyDiv = document.createElement("div");
+            dummyDiv.style.position = "absolute";
+            dummyDiv.style.visibility = "hidden";
+            dummyDiv.style.width = margin;
+            document.body.appendChild(dummyDiv);
+            margin = dummyDiv.offsetWidth;
+            dummyDiv.remove();
+        }
         let rateLimit = false;
         const updateCurrentHeading = () => {
             if (rateLimit) {
-                return;
-            }
-            if (options.currentItemClassName === null) {
                 return;
             }
             rateLimit = true;
             setTimeout(() => {
                 rateLimit = false;
             }, SCROLL_UPDATE_RATE_MS);
-            const scrollPosition = window.scrollY;
+            const scrollPosition = window.scrollY + margin;
             let low = 0;
             let high = headingPositions.length - 1;
             let mid = -1;
@@ -239,7 +247,7 @@ const makeToC = (() => {
             }
             if (mid < 0) {
                 if (currentIndex !== -1) {
-                    if (currentIndex >= 0 && currentIndex < listItems.length) {
+                    if (options.currentItemClassName !== null && currentIndex >= 0 && currentIndex < listItems.length) {
                         listItems[currentIndex].classList.remove(options.currentItemClassName);
                     }
                     if (currentItemLabel !== null) {
@@ -250,8 +258,11 @@ const makeToC = (() => {
             }
             else {
                 if (currentIndex !== mid) {
-                    if (currentIndex >= 0 && currentIndex < listItems.length) {
-                        listItems[currentIndex].classList.remove(options.currentItemClassName);
+                    if (options.currentItemClassName !== null) {
+                        if (currentIndex >= 0 && currentIndex < listItems.length) {
+                            listItems[currentIndex].classList.remove(options.currentItemClassName);
+                        }
+                        listItems[mid].classList.add(options.currentItemClassName);
                     }
                     if (currentItemLabel !== null) {
                         currentItemLabel.innerText = ""; // Remove all child nodes
@@ -259,12 +270,12 @@ const makeToC = (() => {
                             currentItemLabel.appendChild(childNode.cloneNode(true));
                         }
                     }
-                    listItems[mid].classList.add(options.currentItemClassName);
                     currentIndex = mid;
                 }
             }
         };
         const updateHeadingPositions = () => {
+            console.log("updateHeadingPositions");
             headingPositions = listedHeadings.map((heading) => (heading.getBoundingClientRect().top + window.scrollY));
             updateCurrentHeading();
         };

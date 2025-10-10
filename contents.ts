@@ -14,6 +14,7 @@ const makeToC = (() => {
 
 	interface MakeToCOptions {
 		excludeElements: Element[],
+		margin: number | string,
 		linkPrefix: string,
 		linkableOnly: boolean,
 		maxDepth: number | null,
@@ -24,6 +25,7 @@ const makeToC = (() => {
 	}
 	const defaultMakeToCOptions: MakeToCOptions = {
 		excludeElements: [],
+		margin: 0,
 		linkPrefix: "",
 		linkableOnly: false,
 		maxDepth: null,
@@ -274,6 +276,17 @@ const makeToC = (() => {
 
 		const currentItemLabel = options.currentItemLabel;
 
+		let margin = options.margin;
+		if (typeof margin === "string") {
+			const dummyDiv = document.createElement("div");
+			dummyDiv.style.position = "absolute";
+			dummyDiv.style.visibility = "hidden";
+			dummyDiv.style.width = margin;
+			document.body.appendChild(dummyDiv);
+			margin = dummyDiv.offsetWidth;
+			dummyDiv.remove();
+		}
+
 		let rateLimit = false;
 		const updateCurrentHeading = () => {
 			if (rateLimit) {
@@ -285,7 +298,7 @@ const makeToC = (() => {
 				rateLimit = false;
 			}, SCROLL_UPDATE_RATE_MS);
 
-			const scrollPosition = window.scrollY;
+			const scrollPosition = window.scrollY + margin;
 
 			let low = 0;
 			let high = headingPositions.length - 1;
@@ -340,6 +353,7 @@ const makeToC = (() => {
 		}
 
 		const updateHeadingPositions = () => {
+			console.log("updateHeadingPositions");
 			headingPositions = listedHeadings.map((heading) => (
 				heading.getBoundingClientRect().top + window.scrollY
 			));
