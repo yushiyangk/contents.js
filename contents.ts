@@ -280,10 +280,6 @@ const makeToC = (() => {
 				return;
 			}
 
-			if (options.currentItemClassName === null) {
-				return;
-			}
-
 			rateLimit = true;
 			setTimeout(() => {
 				rateLimit = false;
@@ -316,7 +312,7 @@ const makeToC = (() => {
 
 			if (mid < 0) {
 				if (currentIndex !== -1) {
-					if (currentIndex >= 0 && currentIndex < listItems.length) {
+					if (options.currentItemClassName !== null && currentIndex >= 0 && currentIndex < listItems.length) {
 						listItems[currentIndex].classList.remove(options.currentItemClassName);
 					}
 					if (currentItemLabel !== null) {
@@ -326,8 +322,11 @@ const makeToC = (() => {
 				}
 			} else {
 				if (currentIndex !== mid) {
-					if (currentIndex >= 0 && currentIndex < listItems.length) {
-						listItems[currentIndex].classList.remove(options.currentItemClassName);
+					if (options.currentItemClassName !== null) {
+						if (currentIndex >= 0 && currentIndex < listItems.length) {
+							listItems[currentIndex].classList.remove(options.currentItemClassName);
+						}
+						listItems[mid].classList.add(options.currentItemClassName);
 					}
 					if (currentItemLabel !== null) {
 						currentItemLabel.innerText = "";  // Remove all child nodes
@@ -335,7 +334,6 @@ const makeToC = (() => {
 							currentItemLabel.appendChild(childNode.cloneNode(true));
 						}
 					}
-					listItems[mid].classList.add(options.currentItemClassName);
 					currentIndex = mid;
 				}
 			}
