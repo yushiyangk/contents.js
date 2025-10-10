@@ -1,12 +1,13 @@
 "use strict";
 // contents.js
-// version 0.1
+// version 0.1.1
 // Yu Shiyang <yu.shiyang@gnayihs.uy>
 // Browser compatibility: ES6
 // This includes support for all current browsers with any significant market share (at least 0.1%)
 const makeToC = (() => {
     const DEFAULT_LIST_TAG_NAME = "ul";
     const SCROLL_UPDATE_RATE_MS = 100;
+    const WINDOW_ONLOAD_UPDATE_DELAY_MS = 1000;
     const defaultMakeToCOptions = {
         excludeElements: [],
         margin: 0,
@@ -185,16 +186,7 @@ const makeToC = (() => {
         return [list, listedHeadings];
     }
     function flattenListElement(list) {
-        const flatListItems = [];
-        for (const listItem of list.querySelectorAll("li")) {
-            flatListItems.push(listItem);
-            const sublists = listItem.querySelectorAll(listTagNames.join(", "));
-            for (const sublist of sublists) {
-                const flatSublistItems = flattenListElement(sublist);
-                flatListItems.push(...flatSublistItems);
-            }
-        }
-        return flatListItems;
+        return Array.from(list.querySelectorAll("li"));
     }
     function registerObservers(tocList, listedHeadings, contentParent, options) {
         if (options.currentItemClassName === null) {
@@ -202,7 +194,7 @@ const makeToC = (() => {
         }
         const listItems = flattenListElement(tocList);
         let currentIndex = -1;
-        let headingPositions = [];
+        let headingLinks = [];
         const currentItemLabel = options.currentItemLabel;
         let margin = options.margin;
         if (typeof margin === "string") {
@@ -225,25 +217,25 @@ const makeToC = (() => {
             }, SCROLL_UPDATE_RATE_MS);
             const scrollPosition = window.scrollY + margin;
             let low = 0;
-            let high = headingPositions.length - 1;
+            let high = headingLinks.length - 1;
             let mid = -1;
             while (low <= high) {
                 mid = low + Math.floor((high - low) / 2);
-                if (headingPositions[mid] === scrollPosition) {
+                if (headingLinks[mid].position === scrollPosition) {
                     break;
                 }
-                else if (headingPositions[mid] > scrollPosition) {
+                else if (headingLinks[mid].position > scrollPosition) {
                     high = mid - 1;
                 }
                 else {
                     low = mid + 1;
                 }
             }
-            while (mid >= 0 && headingPositions[mid] > scrollPosition) {
+            while (mid >= 0 && headingLinks[mid].position > scrollPosition) {
                 mid--;
             }
             // Check against live heading positions in case memoised position is outdated
-            while (mid < headingPositions.length - 1 && headingPositions[mid + 1] <= scrollPosition) {
+            while (mid < headingLinks.length - 1 && headingLinks[mid + 1].position <= scrollPosition) {
                 mid++;
             }
             if (mid < 0) {
@@ -277,10 +269,18 @@ const makeToC = (() => {
         };
         const updateHeadingPositions = () => {
             console.log("updateHeadingPositions");
-            headingPositions = listedHeadings.map((heading) => (heading.getBoundingClientRect().top + window.scrollY));
+            headingLinks = listedHeadings.map((heading, i) => ({
+                heading: heading,
+                position: heading.getBoundingClientRect().top + window.scrollY,
+                listItem: listItems[i],
+            }));
+            headingLinks.sort((a, b) => a.position - b.position);
             updateCurrentHeading();
         };
         window.addEventListener("load", updateHeadingPositions);
+        window.addEventListener("load", () => {
+            setTimeout(updateHeadingPositions, WINDOW_ONLOAD_UPDATE_DELAY_MS);
+        });
         window.addEventListener("resize", updateHeadingPositions);
         const mutationObserver = new MutationObserver(updateHeadingPositions);
         mutationObserver.observe(contentParent, {
