@@ -193,7 +193,7 @@ const makeToC = (() => {
         }
         const listItems = flattenListElement(tocList);
         let currentIndex = -1;
-        let headingPositions = [];
+        let headingLinks = [];
         const currentItemLabel = options.currentItemLabel;
         let margin = options.margin;
         if (typeof margin === "string") {
@@ -216,25 +216,25 @@ const makeToC = (() => {
             }, SCROLL_UPDATE_RATE_MS);
             const scrollPosition = window.scrollY + margin;
             let low = 0;
-            let high = headingPositions.length - 1;
+            let high = headingLinks.length - 1;
             let mid = -1;
             while (low <= high) {
                 mid = low + Math.floor((high - low) / 2);
-                if (headingPositions[mid] === scrollPosition) {
+                if (headingLinks[mid].position === scrollPosition) {
                     break;
                 }
-                else if (headingPositions[mid] > scrollPosition) {
+                else if (headingLinks[mid].position > scrollPosition) {
                     high = mid - 1;
                 }
                 else {
                     low = mid + 1;
                 }
             }
-            while (mid >= 0 && headingPositions[mid] > scrollPosition) {
+            while (mid >= 0 && headingLinks[mid].position > scrollPosition) {
                 mid--;
             }
             // Check against live heading positions in case memoised position is outdated
-            while (mid < headingPositions.length - 1 && headingPositions[mid + 1] <= scrollPosition) {
+            while (mid < headingLinks.length - 1 && headingLinks[mid + 1].position <= scrollPosition) {
                 mid++;
             }
             if (mid < 0) {
@@ -268,7 +268,12 @@ const makeToC = (() => {
         };
         const updateHeadingPositions = () => {
             console.log("updateHeadingPositions");
-            headingPositions = listedHeadings.map((heading) => (heading.getBoundingClientRect().top + window.scrollY));
+            headingLinks = listedHeadings.map((heading, i) => ({
+                heading: heading,
+                position: heading.getBoundingClientRect().top + window.scrollY,
+                listItem: listItems[i],
+            }));
+            headingLinks.sort((a, b) => a.position - b.position);
             updateCurrentHeading();
         };
         window.addEventListener("load", updateHeadingPositions);
