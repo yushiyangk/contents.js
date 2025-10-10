@@ -17,6 +17,7 @@ const makeToC = (() => {
 		linkPrefix: string,
 		linkableOnly: boolean,
 		maxDepth: number | null,
+		currentItemLabel: HTMLElement | null,
 		itemClassName: string | null,
 		currentItemClassName: string | null,
 		depthDataAttribute: string | null,
@@ -26,6 +27,7 @@ const makeToC = (() => {
 		linkPrefix: "",
 		linkableOnly: false,
 		maxDepth: null,
+		currentItemLabel: null,
 		itemClassName: "toc-item",
 		currentItemClassName: "toc-current",
 		depthDataAttribute: "data-toc-depth",
@@ -256,7 +258,6 @@ const makeToC = (() => {
 		return flatListItems;
 	}
 
-	let rateLimit = false;
 	function registerObservers(
 		tocList: HTMLUListElement | HTMLMenuElement | HTMLOListElement,
 		listedHeadings: HTMLHeadingElement[],
@@ -271,6 +272,9 @@ const makeToC = (() => {
 		let currentIndex: number = -1;
 		let headingPositions: number[] = [];
 
+		const currentItemLabel = options.currentItemLabel;
+
+		let rateLimit = false;
 		const updateCurrentHeading = () => {
 			if (rateLimit) {
 				return;
@@ -315,12 +319,21 @@ const makeToC = (() => {
 					if (currentIndex >= 0 && currentIndex < listItems.length) {
 						listItems[currentIndex].classList.remove(options.currentItemClassName);
 					}
+					if (currentItemLabel !== null) {
+						currentItemLabel.innerText = "";  // Remove all child nodes
+					}
 					currentIndex = -1;
 				}
 			} else {
 				if (currentIndex !== mid) {
 					if (currentIndex >= 0 && currentIndex < listItems.length) {
 						listItems[currentIndex].classList.remove(options.currentItemClassName);
+					}
+					if (currentItemLabel !== null) {
+						currentItemLabel.innerText = "";  // Remove all child nodes
+						for (const childNode of Array.from(listItems[mid].childNodes)) {
+							currentItemLabel.appendChild(childNode.cloneNode(true));
+						}
 					}
 					listItems[mid].classList.add(options.currentItemClassName);
 					currentIndex = mid;

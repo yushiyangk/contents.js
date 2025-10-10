@@ -12,6 +12,7 @@ const makeToC = (() => {
         linkPrefix: "",
         linkableOnly: false,
         maxDepth: null,
+        currentItemLabel: null,
         itemClassName: "toc-item",
         currentItemClassName: "toc-current",
         depthDataAttribute: "data-toc-depth",
@@ -193,7 +194,6 @@ const makeToC = (() => {
         }
         return flatListItems;
     }
-    let rateLimit = false;
     function registerObservers(tocList, listedHeadings, contentParent, options) {
         if (options.currentItemClassName === null) {
             return;
@@ -201,6 +201,8 @@ const makeToC = (() => {
         const listItems = flattenListElement(tocList);
         let currentIndex = -1;
         let headingPositions = [];
+        const currentItemLabel = options.currentItemLabel;
+        let rateLimit = false;
         const updateCurrentHeading = () => {
             if (rateLimit) {
                 return;
@@ -240,6 +242,9 @@ const makeToC = (() => {
                     if (currentIndex >= 0 && currentIndex < listItems.length) {
                         listItems[currentIndex].classList.remove(options.currentItemClassName);
                     }
+                    if (currentItemLabel !== null) {
+                        currentItemLabel.innerText = ""; // Remove all child nodes
+                    }
                     currentIndex = -1;
                 }
             }
@@ -247,6 +252,12 @@ const makeToC = (() => {
                 if (currentIndex !== mid) {
                     if (currentIndex >= 0 && currentIndex < listItems.length) {
                         listItems[currentIndex].classList.remove(options.currentItemClassName);
+                    }
+                    if (currentItemLabel !== null) {
+                        currentItemLabel.innerText = ""; // Remove all child nodes
+                        for (const childNode of Array.from(listItems[mid].childNodes)) {
+                            currentItemLabel.appendChild(childNode.cloneNode(true));
+                        }
                     }
                     listItems[mid].classList.add(options.currentItemClassName);
                     currentIndex = mid;
