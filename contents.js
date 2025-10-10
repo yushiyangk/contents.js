@@ -14,6 +14,7 @@ const makeToC = (() => {
         linkableOnly: false,
         maxDepth: null,
         currentItemLabel: null,
+        currentItemLabelPreamble: "",
         itemClassName: "toc-item",
         currentItemClassName: "toc-current",
         depthDataAttribute: "data-toc-depth",
@@ -246,12 +247,12 @@ const makeToC = (() => {
                 mid++;
             }
             if (mid < 0) {
-                if (currentIndex !== -1) {
+                if (currentIndex >= 0) {
                     if (options.currentItemClassName !== null && currentIndex >= 0 && currentIndex < listItems.length) {
                         listItems[currentIndex].classList.remove(options.currentItemClassName);
                     }
                     if (currentItemLabel !== null) {
-                        currentItemLabel.innerText = ""; // Remove all child nodes
+                        currentItemLabel.innerText = options.currentItemLabelPreamble; // Remove all child nodes
                     }
                     currentIndex = -1;
                 }
