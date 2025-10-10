@@ -185,16 +185,7 @@ const makeToC = (() => {
         return [list, listedHeadings];
     }
     function flattenListElement(list) {
-        const flatListItems = [];
-        for (const listItem of list.querySelectorAll("li")) {
-            flatListItems.push(listItem);
-            const sublists = listItem.querySelectorAll(listTagNames.join(", "));
-            for (const sublist of sublists) {
-                const flatSublistItems = flattenListElement(sublist);
-                flatListItems.push(...flatSublistItems);
-            }
-        }
-        return flatListItems;
+        return Array.from(list.querySelectorAll("li"));
     }
     function registerObservers(tocList, listedHeadings, contentParent, options) {
         if (options.currentItemClassName === null) {

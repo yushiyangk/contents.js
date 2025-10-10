@@ -250,16 +250,7 @@ const makeToC = (() => {
 
 
 	function flattenListElement(list: HTMLUListElement | HTMLMenuElement | HTMLOListElement): HTMLLIElement[] {
-		const flatListItems: HTMLLIElement[] = [];
-		for (const listItem of list.querySelectorAll("li")) {
-			flatListItems.push(listItem);
-			const sublists: NodeListOf<HTMLUListElement | HTMLMenuElement | HTMLOListElement> = listItem.querySelectorAll(listTagNames.join(", "));
-			for (const sublist of sublists) {
-				const flatSublistItems = flattenListElement(sublist);
-				flatListItems.push(...flatSublistItems);
-			}
-		}
-		return flatListItems;
+		return Array.from(list.querySelectorAll("li"));
 	}
 
 	function registerObservers(
