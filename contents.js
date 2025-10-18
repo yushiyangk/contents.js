@@ -1,6 +1,6 @@
 "use strict";
 // contents.js
-// version 0.1.1
+// version 0.1.2
 // Yu Shiyang <yu.shiyang@gnayihs.uy>
 // Browser compatibility: ES6
 // This includes support for all current browsers with any significant market share (at least 0.1%)
@@ -80,8 +80,8 @@ const makeToC = (() => {
         if (fragmentId !== null && fragmentId !== "") {
             const anchor = document.createElement("a");
             anchor.setAttribute("href", `${options.linkPrefix}#${fragmentId}`);
+            tocItemContainer.appendChild(anchor);
             tocItemContainer = anchor;
-            listItem.appendChild(anchor);
         }
         // Clone a snapshot of heading to tocItemContainer
         for (const childNode of Array.from(heading.childNodes)) {
@@ -240,8 +240,8 @@ const makeToC = (() => {
             }
             if (mid < 0) {
                 if (currentIndex >= 0) {
-                    if (options.currentItemClassName !== null && currentIndex >= 0 && currentIndex < listItems.length) {
-                        listItems[currentIndex].classList.remove(options.currentItemClassName);
+                    if (options.currentItemClassName !== null && currentIndex >= 0 && currentIndex < headingLinks.length) {
+                        headingLinks[currentIndex].listItem.classList.remove(options.currentItemClassName);
                     }
                     if (currentItemLabel !== null) {
                         currentItemLabel.innerText = options.currentItemLabelPreamble; // Remove all child nodes
@@ -252,15 +252,23 @@ const makeToC = (() => {
             else {
                 if (currentIndex !== mid) {
                     if (options.currentItemClassName !== null) {
-                        if (currentIndex >= 0 && currentIndex < listItems.length) {
-                            listItems[currentIndex].classList.remove(options.currentItemClassName);
+                        if (currentIndex >= 0 && currentIndex < headingLinks.length) {
+                            headingLinks[currentIndex].listItem.classList.remove(options.currentItemClassName);
                         }
-                        listItems[mid].classList.add(options.currentItemClassName);
+                        headingLinks[mid].listItem.classList.add(options.currentItemClassName);
                     }
                     if (currentItemLabel !== null) {
                         currentItemLabel.innerText = ""; // Remove all child nodes
-                        for (const childNode of Array.from(listItems[mid].childNodes)) {
-                            currentItemLabel.appendChild(childNode.cloneNode(true));
+                        let currentItemContainer = currentItemLabel;
+                        const fragmentId = headingLinks[mid].heading.getAttribute("id");
+                        if (fragmentId !== null && fragmentId !== "") {
+                            const anchor = document.createElement("a");
+                            anchor.setAttribute("href", `${options.linkPrefix}#${fragmentId}`);
+                            currentItemContainer.appendChild(anchor);
+                            currentItemContainer = anchor;
+                        }
+                        for (const childNode of Array.from(headingLinks[mid].heading.childNodes)) {
+                            currentItemContainer.appendChild(childNode.cloneNode(true));
                         }
                     }
                     currentIndex = mid;
