@@ -1,5 +1,5 @@
 // contents.js
-// version 0.1.1
+// version 0.1.2
 
 // Yu Shiyang <yu.shiyang@gnayihs.uy>
 
