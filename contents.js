@@ -297,6 +297,11 @@ const makeToC = (() => {
             attributes: true,
             characterData: true,
         });
+        for (const listItem of listItems) {
+            listItem.querySelectorAll("a").forEach((anchor) => {
+                anchor.addEventListener("click", updateHeadingPositions);
+            });
+        }
         document.addEventListener("scroll", updateCurrentHeading);
     }
     return (tocContainer, contentParent, options) => {
