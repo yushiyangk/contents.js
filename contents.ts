@@ -1,5 +1,5 @@
 // contents.js
-// version 0.1.2
+// version 0.1.3
 
 // Yu Shiyang <yu.shiyang@gnayihs.uy>
 
@@ -385,6 +385,11 @@ const makeToC = (() => {
 			attributes: true,
 			characterData: true,
 		});
+		for (const listItem of listItems) {
+			listItem.querySelectorAll("a").forEach((anchor) => {
+				anchor.addEventListener("click", updateHeadingPositions);
+			});
+		}
 
 		document.addEventListener("scroll", updateCurrentHeading);
 	}
