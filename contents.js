@@ -6,8 +6,8 @@
 // This includes support for all current browsers with any significant market share (at least 0.1%)
 const makeToC = (() => {
     const DEFAULT_LIST_TAG_NAME = "ul";
-    const SCROLL_UPDATE_RATE_MS = 100;
-    const WINDOW_ONLOAD_UPDATE_DELAY_MS = 1000;
+    const SCROLL_UPDATE_RATE_MS = 50;
+    const WINDOW_ONLOAD_UPDATE_DELAY_MS = 500;
     const defaultMakeToCOptions = {
         excludeElements: [],
         margin: 0,
@@ -299,7 +299,10 @@ const makeToC = (() => {
         });
         for (const listItem of listItems) {
             listItem.querySelectorAll("a").forEach((anchor) => {
-                anchor.addEventListener("click", updateHeadingPositions);
+                anchor.addEventListener("click", () => {
+                    window.scrollBy(0, 0);
+                    updateHeadingPositions();
+                });
             });
         }
         document.addEventListener("scroll", updateCurrentHeading);
