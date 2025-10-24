@@ -10,6 +10,7 @@
 const makeToC = (() => {
 	const DEFAULT_LIST_TAG_NAME = "ul";
 	const SCROLL_UPDATE_RATE_MS = 50;
+	const TOC_CLICK_UPDATE_DELAY_MS = 10;
 	const WINDOW_ONLOAD_UPDATE_DELAY_MS = 500;
 
 
@@ -388,8 +389,7 @@ const makeToC = (() => {
 		for (const listItem of listItems) {
 			listItem.querySelectorAll("a").forEach((anchor) => {
 				anchor.addEventListener("click", () => {
-					window.scrollBy(0, 0);
-					updateHeadingPositions();
+					setTimeout(updateHeadingPositions, TOC_CLICK_UPDATE_DELAY_MS);
 				});
 			});
 		}
