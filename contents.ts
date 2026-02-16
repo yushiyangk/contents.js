@@ -1,5 +1,5 @@
 // contents.js
-// version 0.1.4
+// version 0.1.5
 
 // Yu Shiyang <yu.shiyang@gnayihs.uy>
 
@@ -330,7 +330,7 @@ const makeToC = (() => {
 						headingLinks[currentIndex].listItem.classList.remove(options.currentItemClassName);
 					}
 					if (currentItemLabel !== null) {
-						currentItemLabel.innerText = options.currentItemLabelPreamble;  // Remove all child nodes
+						currentItemLabel.innerHTML = options.currentItemLabelPreamble;  // Remove all child nodes
 					}
 					currentIndex = -1;
 				}

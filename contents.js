@@ -1,6 +1,6 @@
 "use strict";
 // contents.js
-// version 0.1.4
+// version 0.1.5
 // Yu Shiyang <yu.shiyang@gnayihs.uy>
 // Browser compatibility: ES6
 // This includes support for all current browsers with any significant market share (at least 0.1%)
@@ -245,7 +245,7 @@ const makeToC = (() => {
                         headingLinks[currentIndex].listItem.classList.remove(options.currentItemClassName);
                     }
                     if (currentItemLabel !== null) {
-                        currentItemLabel.innerText = options.currentItemLabelPreamble; // Remove all child nodes
+                        currentItemLabel.innerHTML = options.currentItemLabelPreamble; // Remove all child nodes
                     }
                     currentIndex = -1;
                 }
